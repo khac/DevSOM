@@ -1,0 +1,210 @@
+Abstract 
+
+
+
+Learning and adaptation occur at several temporal and spatial scales in animals with central nervous systems. In the broadest sense, these include evolution, development, synaptic learning, and real-time modulation. Of these, artificial neural networks have focused on learning at the synaptic level with fixed network sizes and architectures, thus excluding some very important dimensions of adaptation available to biological systems. With the increasing scale of problems to which neural networks are being applied, and the quest to achieve more robust and flexible general intelligence in artificial systems, it is important to explore learning at other scales as well, of which developmental learning is the least explored. In this paper, we study a simple model of developmental learning in self-organized feature maps with the narrow goal of demonstrating that adding a developmental aspect to synaptic learning can enhance the performance of neural networks while reducing computational load. Though simplistic, the approach described represents a general paradigm for neural learning that mimics the gradual complexification that biological neural networks undergo in animals. We also argue that this is a crucial step for neural learning to move beyond narrow applications towards a more general intelligence framework with continuous learning.
+
+
+
+Keywords Neural networks Unsupervised learning Self-organized feature maps Developmental learning Brain-inspired computation
+
+
+1 Introduction
+
+
+Ever since the beginning of the AI project in the 1950s, the goal has been to achieve intelligence that operates at the same level as humans, or at least at the level of intelligent mammals. However, despite repeated predictions about imminent success [24], the goal has proved to be elusive [27, 30]. The recent explosive growth in AI systems, led by deep neural networks, has been focused on narrow tasks and pre-defined goals—often with impressive but brittle performance. It is also based on supervised (or at least gradient-based) learning, uses very large amounts of data, and requires exorbitant computational effort for training. All these features make even the most successful current AI very different from natural intelligence, which is versatile and robust, learns through self-organization or reinforcement, needs little data, and often learns in very few trials. The question must therefore be asked: What is missing? The answer is likely to be very complicated, but one crucial feature that is missing from most neural network learning today is the exclusion of evolution and development from the learning process. Two important reasons why animal nervous systems can learn very complex tasks with relative ease are:
+
+1. Evolution pre-configures useful processing architectures, feature detectors, and constraints that act as powerful priors for subsequent learning.
+
+2. Development learns complex tasks requiring many degrees of freedom gradually, beginning with simple learning in a simple (infant) body, and systematically adding more complexity of task and body in tandem while using the previous
+
+ simpler learning as a biasing prior.
+
+ In contrast, most current AI systems—both neural networks and robots—usually begin with full complex architecture and use learning to acquire complex capabilities, necessitating computationally intensive time-consuming learning. This paper focuses on the second item listed above, making the case that adding a developmental component to neural learning can make it more efficient and scalable.
+
+
+2 Background
+
+
+
+ While most work in neural networks has focused on the adaptation of fixed architectures, there has also been significant research on applying evolutionary algorithms [38]—primarily in the context of evolutionary robotics [31]. The results show that this approach can often be very promising, but the ability to truly capture the power of evolution in actual implementation or even simulation is limited since evolution is fundamentally a slow process that leverages extremely large populations. These conditions are impossible to replicate artificially, and the evolutionary aspects of biological learning must be incorporated mostly into the design process. However, the biological processes of development are much more amenable to simulation and implementation because they occur at the level of the individual animal. But surprisingly, work on incorporating developmental processes into neural learning or robotics has been more limited (see [3] for a notable exception in robotics).
+
+ 
+
+In neural networks, development usually involves combining learning with growth—to support incremental learning [33, 35, 39]. Algorithms proposed for growth or pruning in neural networks [5, 17, 19, 25] are not especially developmental in their approach. Most importantly, they are grounded in the supervised learning paradigm whereas biological development occurs in unsupervised or reinforcement learning situations. The theme of development in reinforcement learning, however, has been investigated by Asada and collaborators [2] in the context of robotics.
+
+
+
+Interest in enabling neural networks to show life-long learning has resulted in several incremental learning strategies. Some of these rely on growing networks in a manner like development. Miller and colleagues [28, 29] have proposed a model where neurons are endowed with the capacity to grow new connections and neurons in ways that mimic development in the nervous system. However, the “developmental” process is simulated within an evolutionary algorithm. The most systematic growth-based approaches to incremental learning are the growing neural gas (GNG) model of Fritzke [7–9] and the subsequently developed self-organized incremental neural network (SOINN) model of Hasegawa and colleagues [10–12, 20, 36]. In both these models, a SOFM network is grown (and occasionally pruned) adaptively based on the distribution of neuron activity across the training data. The goal is to balance the representational load across neurons, to identify the number of clusters in the data adaptively, or to handle non-stationarity in the data.
+
+
+
+ The motivation and approach for the study we present are very different. First, the focus is on scalability and efficiency of learning, so the dataset is neither growing nor changing. The growth in the network is not driven by any calculated metric (as
+
+ in GNG, SOINN, and other systems), but represents the expanding degrees of freedom in a growing organism (though we do not claim biological plausibility for the mechanism used.) The “incremental” aspect in our model is thus hierarchical: What is increasing is the system’s capacity to perceive and learn the same data with increasing resolution and in more complex ways, not the ability to keep learning new data. This is discussed in more detail in the next section.
+
+
+
+3 Motivation and General Framework
+
+
+
+The supervised learning paradigm will always need large amounts of labeled data and training iterations. Moving towards more natural general intelligence requires focusing on unsupervised and reinforcement learning, which are the basis of learning in animals. The long-term goal of our research is to investigate how developmental methods can help address complex learning tasks in animals, robots, and AI systems. The Developmental Self-Organized Map (DevSOM) model studied in this paper represents the simplest step in that investigation: Showing that a simple, developmentally inspired growth process can significantly improve the learning of feature maps. 
+
+
+
+The self-organized feature map (SOFM) model first proposed by Kohonen [21– 23] has become one of the most influential and profoundly useful paradigms in neural networks. In a very simple framework, it captures the cognitively critical function of learning informative spatial maps from data in complex, high-dimensional feature spaces [32]. Such maps are seen explicitly in many parts of the mammalian brain [15]—notably the visual [13, 18], somatosensory [6, 34, 37], and motor cortices [1, 14, 16, 34]—and very likely occur in more abstract form throughout the nervous system. It is one of the brain’s primary ways of organizing data and learning meaningful representations based on feature similarity. Thus, we choose the SOFM paradigm to demonstrate the utility of a developmental approach. A key aspect of building feature map representations is to cluster data based on feature similarity so that distinguishable categories of data are represented in distinct regions of the map. We use this requirement to quantify the performance of learning in this paper. 
+
+
+
+A complex domain with a high-dimensional feature space and a large amount of data requires a network large enough to represent all the categories, including small, nuanced differences between samples. But when a large network is trained on a large amount of high-dimensional data, the process is difficult. It often requires very slow training with careful tuning of parameters, and even then, it is often difficult to achieve a sufficient performance level. This is an instance of the standard situation encountered in most AI paradigms today, where complicated systems are forced to learn complicated information directly, thus setting up an inherently very complex learning task. We propose that this can be alleviated by solving the problem developmentally in a hierarchical fashion as follows: 
+
+
+
+1. Start with a small network that quickly learns to make gross distinctions in feature space, thus laying down the foundations of the map at an approximate level. 
+
+
+
+2. Then grow the network in stages where the neurons in each stage inherit the imperfect but useful learning of the neurons from the prior stage, but at the same time, add some variation so that finer features of the data can be learned. 
+
+
+
+The results in this paper show that significantly better results can be achieved with this approach with a much lower computational cost. 
+
+
+
+This profound aspect of developmental learning was explored in an early work by Elman [4] in learning a language model, though that model still used supervised learning. Elman showed that a system that starts with initially limited but gradually increasing information processing capacity can learn complex functions better than one that is forced to learn the same data at full capacity from the outset. As he states: “Limited capacity acts as a protective veil, shielding the infant from stimuli which may either be irrelevant or require prior learning to be interpreted. Limited capacity reduces the search space, so that the young learner may be able to entertain a small number of hypotheses about the world.” The DevSOM model applies the same principle in a more biologically plausible—and potentially more broadly applicable—unsupervised setting. The work presented in this paper is intended as a “proof of concept” for this more general approach.
+
+
+
+
+4 The DevSOM Model Description
+
+
+
+As in all SOFM models, the goal in the DevSOM model is to organize data in a high dimensional feature space onto a low-dimensional neural surface (or hypersurface) such that data points with similar features are mapped close together. If the data has clusters or categories defined by feature similarity, a SOFM would map data points of the same category to a compact region on the map, and data points of distinct categories to non-overlapping regions. Thus, a SOFM also functions as a clustering network if the underlying data has clustered structure. Furthermore, if there are variations within a category or data points those bridge categories, the structure of the map would also reflect that. This case provides a convenient way of studying the capabilities of SOFMs and is adopted in this paper. We use data from the well-known MNIST digit dataset [26] to pose the learning problems on which the DevSOM model is evaluated. 
+
+
+DevSOM is a hierarchical growth model, where successively larger standard SOFMs are trained in combination with a simple growth process. At each stage, the larger network inherits weights from its predecessor as described below. All networks are trained using the standard SOFM training algorithm with a shrinking Gaussian neighborhood function. Each neuron, i, in the network has a topographical location ri on the map and receives input from all feature inputs through the weight vector wi = [wij]. When a data point xq = [xq1, . . . xqm ] is presented to the network the winner neuron is determined by i∗ = argmini  || xq − wi ||, and the weights of the neurons are updated using:
+
+
+
+where σ is the initial width of the neighborhood function (in grid cells), η is the initial learning rate, and T is the total number of iterations, which equals the number of training
+
+epochs times the number of data points in the training dataset. Both the hyperparameters undergo hyperbolic decay. The process begins with a small infant network, N0, which is a standard SOFM with randomly initialized weights. In the simulations for this paper, we assume that the network is a two-dimensional square n0 x n0 lattice. The network is trained only for a very small number of iterations through the data, which may represent only a small subset of all available data. This network is not large enough to capture the details of the complex data, and training results in a low-quality gross map where categories are only vaguely discriminated and nuances within categories are not captured at all.
+
+
+
+Once the infant network has been trained, it is expanded into the Level-1 network, N1, with n1 x n1 neurons. For our simulations, we use nk = 2nk−1, so n1 = 2n0. The neurons of N1 are obtained by replicating each neuron of N0 into a 2 x 2 sub-lattice of four neurons that inherit their weights from their parent neuron in N0, but with N(0, 0.2) independent Gaussian noise added to each weight. Thus, this network inherits the information learned by N0, but with twice the potential resolution in both dimensions of the map. This network is again trained for a small number of epochs, after which the same process is repeated to generate the N2 network with n2 x n2 neurons, and so on. After K-steps of developmental growth, the feature map is of size 2Kn0 x 2Kn0. Each stage is trained only for the same small number of epochs (5 in the simulations).
+
+
+5 Simulations and Results
+
+5.1 Experimental Protocols
+
+To investigate the potential benefits of the DevSOMmodel, we perform experiments under four protocols as described below. The MNIST dataset has 70,000 samples of handwritten digits from 0 through 9, with 7,000 samples of each digit. Of these, 1,000 samples of each digit are used for testing and the remaining 6,000 for training in various configurations. The test set for all protocols is the same. The two main hyper-parameters in SOFM are the .σ and .η, namely the initial width parameter of the neighborhood function and the initial learning rate, respectively. All weights are initialized randomly. The protocols are:
+
+
+
+– Direct Training (D): In this case, a 24 x 24 network is trained on the full 60,000 sample training set for 15 epochs, i.e., a total of 900,000 steps. To find good hyperparameters, all combinations of .σ = {1.5, 3.0, 6.0} and .η = {0.025, 0.05, 0.1} are evaluated in a grid search to find the best combination, which is reported below.
+
+– DevSOM with Full Data (DevFull): This is the baseline developmental case consisting of three stages: i) A 6 x 6 network is trained with the full training set for 5 epochs; ii) The network is developed to a 12 x 12 network and trained on the
+
+
+
+
+
+full training set for 5 epochs, and iii) The network is again developed to 24 x 24 and trained on the full training set for 5 epochs. Thus, the training in this whole protocol is 15 epochs, as is the case in Direct Training, but 10 of those epochs are for smaller networks, so the overall computation time is much lower. Since each stage requires its own hyperparameters, doing a grid search is impractical. However, good values were found by trial and error (see Table 1).
+
+
+
+– DevSOM with Growing Data (DevGrow): This protocol has the same three stages as DevFull, but the first stage (6 x 6) uses only 600 datapoints for training (60 from each digit), the middle (12 x 12) stage uses 6,000 data points including the 600 from the stage (i), and the final (24 x 24) stage uses the full training set. This reduces the computational effort dramatically over the D and DevFull protocols. This protocol corresponds best to natural developmental learning, where learning in the early stages is done on more limited data than learning in later stages.
+
+– DevSOM with Shrinking Data (DevShrink): Like DevGrow, this protocol uses different amounts of training data in each stage, but in the reverse order: The 6 x 6 network is trained on the full training set, the 12 x 12 on 6,000 points, and the
+
+24 x 24 network on only 600 points. The computational effort here is much lower than DevGrow, because the smallest network is using the most data. However, this is an extreme protocol that is not as consistent with development as DevGrow, since intelligent agents typically learn from more data as they become more complex. 
+
+
+
+The purpose of DevFull is to show that development can match or outperform Direct learning with less computation. DevGrow shows that a small amount of early learning can facilitate more complicated learning later. Finally, DevShrink demonstrates that a large amount of early learning with a small system can be extended developmentally to a larger system with much less further training.
+
+
+
+ 5.2 Performance Metrics
+
+While the performance of self-organized maps can be evaluated in many ways, we measure it in terms of category representation, i.e., to what extent the ten classes are mapped distinctly in the final network. This is done using a visualization and two numerical metrics, calculated separately on the training and testing sets:
+
+
+
+
+1. Visualization of Neuron Tuning: This metric quantifies the degree to which each neuron becomes tuned to data from a specific class. Let M be the number of classes Ci , i = 1, . . . , M (M = 10 is these experiments). Consider the set of all neurons that win for any sample in the dataset (i.e., neurons that do not win at all are excluded). Given a neuron with coordinates (x, y), let m(x, y) be the total number of data points for which the neuron is the winner, and ni (x, y) the number of these that come from class Ci. Then pi (x, y) = ni (x, y)/m(x, y) is the fraction of the data points for which (x, y) wins that come from class Ci. The vector p(x, y) = [p1(x, y) . . . pM(x, y)] is then the probability distribution of class representation by (x, y). If only one pi (x, y) = 1 and the rest are all 0, the neuron is responding purely to one class. At the other extreme, if pi (x, y) = 1/M for all i, then the neuron responds equally to all classes and thus does not represent any class. This is quantified using the entropy of p(x, y):
+
+
+
+
+A neuron that represents only one class has entropy 0, and a neuron that responds equally to all classes has entropy logM > 0. Thus, looking at the entropy of all neurons in the network through a heatmap gives a visual impression of how well-tuned the map has become to the classes in the data. A well-tuned map will have most neurons with entropy near 0.
+
+
+
+2. Normalized Tuning Metric: The entropy metric above captures the specificity of tuning in individual neurons, but not the localization of each category to specific neurons. To get a measure of the latter for the whole network, a normalized global performance metric is calculated which would be 1 if each class is represented by neurons that respond only to that class. Let N be the size of the dataset and Ni be the number of samples for class Ci. Define qi (x, y) = ni (x,y)/Ni as the fraction of data points in Ci for which neuron (x, y) is the winner. Then the class-wise metric Qi is defined as:
+
+
+
+
+
+Thus, if all the neurons that win for any data point in class Ci win only for that class, Qi = 1, indicating that class Ci is very well-discriminated. Finally, the normalized global performance metric Q is defined as the mean of the tuning quality overall classes:
+
+
+
+
+
+3. Categorization: This metric quantifies how well the trained map can function as a simple classifier. To do this, every winner neuron (x, y) is assigned class label i if ni (x, y) > nj (x, y) ∀ j != i, i.e., the class for which it wins the most in the training set. Then, each sample in the test set is applied to the network and assigned the class label of the winning neuron. If the winning neuron had not won for any training sample (and thus has no class label), the data point is assigned a random class label. After all test samples have been labeled, the fraction correct (hit-rate) is calculated as the categorization metric. While the information captured by this metric is closely related to that of the previous one, it is a more direct test of categorization capability and—very importantly—checks for generalization from the training set to the test set explicitly.
+
+
+
+5.3 Results
+
+The performance results for all four protocols are summarized in Tables 1 through 5. Table 1 provides a comparison of both metrics on the 24 x 24 networks of each protocol. It also lists the hyperparameters used in each case. It should be noted that, for the D protocol, the network was run with these hyperparameters—obtained via a grid search—for 15 epochs with all training data. For the three developmental protocols, the hyperparameters for the smaller networks were different, as listed in Tables 2-5. The comparisons in Table 1 show the following:
+
+
+
+
+
+
+
+
+
+1. The DevFull protocol does significantly better than the base D protocol on both metrics and both datasets (training and test) while using far less computation time (see Table 6).
+
+2. The DevGrow protocol shows a slight improvement even over DevFull, even though it uses even less computation.
+
+3. The DevShrink protocol has performance only slightly worse than D but significantly worse than DevFull and DevGrow but uses far less computation time.
+
+
+
+
+
+
+
+Since the three developmental protocols required training of 6 x 6 and 12 x 12 networks, these were also simulated in the D case. Tables 2-5 show the results and hyperparameters for networks of all three sizes for each of the protocols. This gives a good idea of the progression of developmental learning. 
+
+
+
+Figure 1 shows the neuron entropy distributions over the final 24 x 24 networks obtained in each of the protocols. Recalling that well-tuned neurons have entropy near 0 (lighter colors), it can be seen visually that the DevFull and DevGrow maps are better tuned than the D and DevShrink networks—a fact reflected in their performance metrics as well. It is also interesting to observe the formation of boundaries between regions tuned to distinct classes in each case. These boundaries—which show up as darker neurons—represent regions of overlap between classes and are narrower in the DevFull and DevGrow maps.
+
+
+
+
+
+Another informative way to assess what the networks have learned is to look at the features to which each neuron has become maximally tuned. These can be obtained simply by looking at the 784 weights of each neuron as a 28 x 28 image. Figures 2-5 show these feature maps for the final 24 x 24 networks for each protocol, which demonstrate which region became tuned to which digit. Issues of interest here are: (a) Were all the digits well-represented? (b) What are the sizes of the regions representing each digit? and (c) Which digits are represented close to or far from which ones? As can be seen from the maps, most digits get good representations, except the digit 4 which is very narrowly represented in all four cases.
+
+
+
+
+
+As the number of epochs over the training dataset remained constant in all protocols, there was a significant reduction in the training time of the network in the developmental cases. Table 6 shows that DevFull starting with a 6x6 network and with 2-step developmental learning achieves a 50% reduction in training time for a 24x24 network over the D Protocol, and DevGrow 70%reduction—both with a significant performance improvement over D. While DevShrink uses only about 5% of the training time needed for D, it comes at the cost of a very small loss in performance (see Table 1).
+
+
+6 Conclusions
+
+This paper has reported a pilot study of using a developmental approach for unsupervised learning in self-organized feature maps. The results show that, with this developmental approach, superior results can be obtained with a significantly lower computational load. This is achieved by letting limited learning in small networks to create the gross organization on which larger networks in subsequent stages can build more effectively. In contrast, training a naive large network directly requires more training and may still fail to match the results of the developmental approach.
